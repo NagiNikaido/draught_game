@@ -5,6 +5,8 @@ using namespace std;
 
 Board :: Board(){
     bd = new Cell* [N];
+    rt = new TreeNode* [M];
+    for(int i=0;i<M;i++) rt[i] = nullptr;
     for(int i=0;i<N;i++) bd[i] = new Cell[N];
     for(int i=0;i<N;i++)
         for(int j=0;j<N;j++) bd[i][j]=Cell::Empty;
@@ -14,34 +16,15 @@ Board :: Board(){
         for(int j=!(i&1);j<N;j+=2) bd[i][j]=Cell::White_P;
 }
 
-Board :: Board(const Board &_){
-    bd = new Cell *[N];
-    for(int i=0;i<N;i++) bd[i] = new Cell[N];
-    for(int i=0;i<N;i++)
-        for(int j=0;j<N;j++)
-            bd[i][j] = _.bd[i][j];
-}
-
 Board :: Board(Board &&_){
     bd = _.bd; _.bd = nullptr;
-}
-
-Board& Board::operator= (const Board &_){
-    if(this!=&_){
-        if(!bd) {
-            bd = new Cell *[N];
-            for(int i=0;i<N;i++) bd[i] = new Cell[N];
-        }
-        for(int i=0;i<N;i++)
-            for(int j=0;j<N;j++)
-                bd[i][j] = _.bd[i][j];
-    }
-    return *this;
+    rt = _.rt; _.rt = nullptr;
 }
 
 Board& Board::operator= (Board &&_){
     if(this!=&_){
         swap(_.bd,bd);
+        swap(_.rt,rt);
     }
     return *this;
 }
@@ -52,24 +35,17 @@ Board :: ~Board(){
         delete[] bd;
         bd = nullptr;
     }
-}
-
-void Board :: make_move(PossibleMove current_move){
-    swap((*this)[current_move.finalPos],(*this)[current_move.sx][current_move.sy]);
-    for(auto dd : current_move.checkedStones)
-        (*this)[dd] = Cell::Empty;
+    if(rt){
+        for(int i=0;i<M;i++) if(rt[i]) delete rt[i];
+        delete[] rt;
+        rt = nullptr;
+    }
 }
 
 
 static const int dx[4]={1,1,-1,-1};
 static const int dy[4]={-1,1,1,-1};
-static bool checked[Board::N][Board::N];
-static vector<PossibleMove> res;
-static int max_count;
 
-inline bool in_board(int x,int y){
-    return x>=0 && x<Board::N && y>=0 && y<Board::N;
-}
 inline bool colorDiff(Cell a,Cell b){
     if(a==Cell::Empty || b==Cell::Empty) return false;
     return (int(a) ^ int(b)) & 2;
@@ -77,92 +53,150 @@ inline bool colorDiff(Cell a,Cell b){
 inline bool is_king(Cell a){
     return int(a) & 1;
 }
-void dfs(Cell **bd,int x,int y,Cell current_stone,PossibleMove &current_move,int lastDir=-1){
-    bool flag = false;
-    if(is_king(current_stone)){
-        for(int d=0;d<4;d++) if(d!=lastDir){
-            int tx,ty;
-            for(;in_board(tx,ty) && bd[tx][ty]==Cell::Empty;tx+=dx[d],ty+=dy[d]);
-            if(in_board(tx,ty) && colorDiff(bd[tx][ty],current_stone)
-                && !checked[tx][ty] && in_board(tx+dx[d],ty+dy[d]) && bd[tx+dx[d]][ty+dy[d]]==Cell::Empty){
-                    flag=true;
-                    checked[tx][ty]=true;
-                    current_move.checkedStones.push_back({tx,ty});
-                    dfs(bd,tx+=dx[d],ty+=dy[d],current_stone,current_move);
-                    for(tx+=dx[d],ty+=dy[d];in_board(tx,ty) && bd[tx][ty]==Cell::Empty;tx+=dx[d],ty+=dy[d])
-                        dfs(bd,tx,ty,current_stone,current_move,d);
-                    current_move.checkedStones.pop_back();
-                    checked[tx][ty]=false;
-                }
+
+TreeNode :: ~TreeNode(){
+    for(auto a : ch) if(a.second){
+        delete a.second;
+        a.second = nullptr;
+    }
+//    cerr << sid << ' ' << cid << endl;
+}
+TreeNode * TreeNode :: moveTo(int _id){
+    TreeNode *p = this->ch[_id];
+    this->ch[_id] = nullptr;
+    this->~TreeNode();
+    return p;
+}
+TreeNode :: TreeNode(Cell **bd,int sid,int cid,int h,Cell stone,ULL checked){
+    pair<int,int> pos;
+    int sx,sy,x,y;
+    pos = Board :: pos(sid); sx = pos.first; sy = pos.second;
+    pos = Board :: pos(cid); x = pos.first; y = pos.second;
+    this->sid = sid; this->cid = cid;
+    this->h = h; this->checked = checked;
+    this->stone = stone;
+
+    if(is_king(stone)){
+        for(int d=0;d<4;d++){
+            int tx=x+dx[d],ty=y+dy[d];
+            for(;Board::in_board(tx,ty) && (bd[tx][ty]==Cell::Empty || tx==sx && ty==sy);tx+=dx[d],ty+=dy[d]);
+            int dd = Board::id(tx,ty);
+            if(Board::in_board(tx,ty) && colorDiff(bd[tx][ty],stone)
+                && !(checked & (1ULL << dd)) && Board::in_board(tx+dx[d],ty+dy[d])
+                    && (bd[tx+dx[d]][ty+dy[d]]==Cell::Empty || tx+dx[d]==sx && ty+dy[d]==sy)){
+                        int newId = Board::id(tx+=dx[d],ty+=dy[d]);
+                        this->ch[newId] = new TreeNode(bd,sid,newId,h+1,stone,checked|(1ULL<<dd));
+                        this->h = max(this->h,this->ch[newId]->h);
+                        for(tx+=dx[d],ty+=dy[d];
+                            (Board::in_board(tx,ty) && bd[tx][ty]==Cell::Empty || tx==sx && ty==sy);tx+=dx[d],ty+=dy[d])
+                                {
+                                    newId = Board::id(tx,ty);
+                                    this->ch[newId] = new TreeNode(bd,sid,newId,h+1,stone,checked|(1ULL<<dd));
+                                    this->h = max(this->h,this->ch[newId]->h);
+                                }
+                    }
         }
     }
     else{
         for(int d=0;d<4;d++){
-            int tx=x+dx[d],ty=y+dy[d];
-            if(in_board(tx,ty) && colorDiff(bd[tx][ty],current_stone)
-                 && !checked[tx][ty] && in_board(tx+dx[d],ty+dy[d]) && bd[tx+dx[d]][ty+dy[d]]==Cell::Empty){
-                     flag=true;
-                     checked[tx][ty]=true;
-                     current_move.checkedStones.push_back({tx,ty});
-                     dfs(bd,tx+dx[d],ty+dy[d],current_stone,current_move);
-                     current_move.checkedStones.pop_back();
-                     checked[tx][ty]=false;
-                 }
-        }
-    }
-    if(!flag){
-        current_move.finalPos=pair<int,int>(x,y);
-        if(current_move.checkedStones.size()>max_count){
-            max_count = current_move.checkedStones.size();
-            res.clear();res.push_back(current_move);
-        }
-        else if(current_move.checkedStones.size()==max_count){
-            res.push_back(current_move);
+            int tx=x+dx[d],ty=y+dy[d],dd=Board::id(tx,ty);
+            if(Board::in_board(tx,ty) && colorDiff(bd[tx][ty],stone)
+                && !(checked & (1ULL << dd)) && Board::in_board(tx+dx[d],ty+dy[d])
+                    && (bd[tx+dx[d]][ty+dy[d]]==Cell::Empty || tx+dx[d]==sx && ty+dy[d]==sy)){
+                        int newId = Board::id(tx+dx[d],ty+dy[d]);
+                        this->ch[newId] = new TreeNode(bd,sid,newId,h+1,stone,checked|(1ULL<<dd));
+                        this->h = max(this->h,this->ch[newId]->h);
+            }
         }
     }
 }
 
-vector<PossibleMove> Board::find_possible_move(int x,int y){
-    PossibleMove current_move;
-    Cell current_stone;
-    max_count = 0;
-    memset(checked,false,sizeof(checked));
-    res.clear();
-    if(bd[x][y]==Cell::Empty) return res; //an empty cell!
-    current_move.sx=x;current_move.sy=y;
-    current_stone = bd[x][y];bd[x][y]=Cell::Empty;
-    dfs(bd,x,y,current_stone,current_move);
-    if(!max_count){
-        if(is_king(current_stone)){
-            for(int d=0;d<4;d++){
-                for(int tx=x+dx[d],ty=y+dy[d];in_board(tx,ty) && bd[tx][ty]==Cell::Empty;tx+=dx[d],ty+=dy[d]){
-                    current_move.finalPos=pair<int,int>(tx,ty);
-                    res.push_back(current_move);
-                }
-            }
-        }
-        else{
-            for(int d=0;d<2;d++){
-                int tx=x+dx[(int(current_stone)&2)+d],ty=y+dy[(int(current_stone)&2)+d];
-                if(in_board(tx,ty) && bd[tx][ty]==Cell::Empty){
-                    current_move.finalPos=pair<int,int>(tx,ty);
-                    res.push_back(current_move);
-                }
+TreeNode :: TreeNode(Cell **bd,int sid,int cid,Cell stone){
+    this->sid = sid, this->cid = cid;
+    this->h = 0; this->checked = 0;
+    this->stone = stone;
+}
+
+void TreeNode :: expand(Cell **bd){
+    pair<int,int> pos;
+    int x,y;
+    pos = Board::pos(cid); x = pos.first; y = pos.second;
+    if(is_king(stone)){
+        for(int d=0;d<4;d++){
+            for(int tx=x+dx[d],ty=y+dy[d];Board::in_board(tx,ty) && bd[tx][ty]==Cell::Empty;tx+=dx[d],ty+=dy[d]){
+                int newId = Board::id(tx,ty);
+                this->ch[newId] = new TreeNode(bd,sid,newId,stone);
             }
         }
     }
-    bd[x][y] = current_stone;
+    else{
+        for(int d=0;d<2;d++){
+            int tx=x+dx[int(stone)&2|d],ty=y+dy[int(stone)&2|d];
+            if(Board::in_board(tx,ty) && bd[tx][ty]==Cell::Empty){
+                int newId = Board::id(tx,ty);
+                this->ch[newId] = new TreeNode(bd,sid,newId,stone);
+            }
+        }
+    }
+}
+
+set<int> Board :: find_possible_move(int color){
+    for(int i=0;i<M;i++){
+        if(rt[i]) delete rt[i];
+        rt[i] = nullptr;
+        if(int((*this)[Board::pos(i)])/2==color){
+            rt[i] = new TreeNode(bd,i,i,0,(*this)[Board::pos(i)],0);
+            if(!rt[i]->h) rt[i]->expand(bd);
+        }
+    }
+    int current_h = 0;
+    for(int i=0;i<M;i++){
+        if(rt[i] && rt[i]->h > current_h) current_h = rt[i]->h;
+    }
+    set<int> res;
+    for(int i=0;i<M;i++) if(rt[i] && rt[i]->h==current_h && rt[i]->ch.size())
+        res.insert(i);
     return res;
 }
-
 static const char __mapping[5][5]={
     "BP","BK","WP","WK","  "
 };
 
-void Board::print(){
+void Board::print(ULL checked){
     for(int i=0;i<N;i++){
-        for(int j=0;j<N;j++)
-            printf("%s ",__mapping[int(bd[i][j])]);
+        for(int j=0;j<N;j++){
+            printf("%s",__mapping[int(bd[i][j])]);
+            if(Board::id(i,j)!=-1 && ((checked >> Board::id(i,j))&1)) putchar('x');
+            else putchar(' ');
+        }
         puts("");
+    }
+}
+
+void Board::make_move(int from,int to,int checked,bool isFinal){
+    swap((*this)[Board::pos(from)],(*this)[Board::pos(to)]);
+    if(checked!=-1) (*this)[Board::pos(checked)] = Cell::Empty;
+    if(isFinal &&  !is_king((*this)[Board::pos(to)])){
+        pair<int,int> t = Board::pos(to);
+        int color = int((*this)[t]) & 2;
+        if(color==0 && t.first == 9 || color==1 && t.first==0)
+            (*this)[Board::pos(to)] = Cell(int((*this)[Board::pos(to)]) | 1);
+    }
+}
+void Board::select_cell(int pp){
+    for(;rt[pp]->ch.size();){
+        for(auto qq : rt[pp]->ch)
+            if(qq.second->h == rt[pp]->h){
+                pair<int,int> np = Board::pos(qq.first);
+                cout << "(" << np.first<< "," << np.second <<")" << " ";
+            }
+        cout << endl;
+        int x,y;
+        cin >> x >> y;
+        ULL kp = rt[pp]->checked ^ rt[pp]->ch[Board::id(x,y)]->checked;
+
+        make_move(rt[pp]->cid,Board::id(x,y),__builtin_ctzll(kp),rt[pp]->ch[Board::id(x,y)]->ch.size());
+        rt[pp] = rt[pp]->moveTo(Board::id(x,y));
+        print(rt[pp]->checked);
     }
 }
