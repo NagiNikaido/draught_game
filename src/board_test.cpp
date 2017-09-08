@@ -5,7 +5,16 @@ using namespace std;
 
 int main(){
     Board a;
-    for(int color=0;;color^=1){
+    for(int i=0;i<Board::M;i++) a.set_cell(i,Cell::Empty);
+    a.set_cell(6,Cell::Black_P);a.set_cell(8,Cell::White_P);a.set_cell(9,Cell::White_P);
+    a.set_cell(14,Cell::Black_P);
+    a.set_cell(16,Cell::Black_P);
+    a.set_cell(21,Cell::White_P);
+    a.set_cell(26,Cell::Black_P);
+    a.set_cell(32,Cell::Black_P);
+    a.set_cell(36,Cell::Black_P);
+    a.set_cell(42,Cell::White_P);
+    for(int color=1;;color^=1){
         a.print();
         set<int> moves;
         moves = a.find_possible_move(color);

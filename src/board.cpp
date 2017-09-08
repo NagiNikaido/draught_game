@@ -1,5 +1,6 @@
-#include <bits/stdc++.h>
+#include <algorithm>
 #include "board.h"
+#include <QDebug>
 
 using namespace std;
 
@@ -10,10 +11,12 @@ Board :: Board(){
     for(int i=0;i<N;i++) bd[i] = new Cell[N];
     for(int i=0;i<N;i++)
         for(int j=0;j<N;j++) bd[i][j]=Cell::Empty;
+
     for(int i=0;i<4;i++)
         for(int j=!(i&1);j<N;j+=2) bd[i][j]=Cell::Black_P;
     for(int i=6;i<N;i++)
         for(int j=!(i&1);j<N;j+=2) bd[i][j]=Cell::White_P;
+
 }
 
 Board :: Board(Board &&_){
@@ -173,16 +176,40 @@ void Board::print(ULL checked){
     }
 }
 
-void Board::make_move(int from,int to,int checked,bool isFinal){
+inline int ctzll(ULL t){
+    if(!t) return -1;
+    return (t&1ull) ? 0 : (ctzll(t>>1)+1);
+}
+
+pair<int,bool> Board::make_move(int from,int to){
+    int checked = ctzll(rt[current_cell]->checked ^ rt[current_cell]->ch[to]->checked);
+    rt[current_cell] = rt[current_cell]->moveTo(to);
+    bool isFinal = !rt[current_cell]->ch.size();
     swap((*this)[Board::pos(from)],(*this)[Board::pos(to)]);
     if(checked!=-1) (*this)[Board::pos(checked)] = Cell::Empty;
     if(isFinal &&  !is_king((*this)[Board::pos(to)])){
         pair<int,int> t = Board::pos(to);
         int color = int((*this)[t]) & 2;
-        if(color==0 && t.first == 9 || color==1 && t.first==0)
+        if(color==0 && t.first == 9 || color==2 && t.first==0)
             (*this)[Board::pos(to)] = Cell(int((*this)[Board::pos(to)]) | 1);
     }
+    return pair<int,bool>(checked,isFinal);
 }
+
+set<int> Board::possible_moves(int pp){
+    set<int> res;
+    if(pp==-1) pp=current_cell;
+    for(auto qq : rt[pp]->ch)
+        if(qq.second->h == rt[pp]->h)
+            res.insert(qq.first);
+    return res;
+}
+
+void Board::select_cell(int pp){
+    current_cell = pp;
+}
+
+/*
 void Board::select_cell(int pp){
     for(;rt[pp]->ch.size();){
         for(auto qq : rt[pp]->ch)
@@ -195,8 +222,18 @@ void Board::select_cell(int pp){
         cin >> x >> y;
         ULL kp = rt[pp]->checked ^ rt[pp]->ch[Board::id(x,y)]->checked;
 
-        make_move(rt[pp]->cid,Board::id(x,y),__builtin_ctzll(kp),rt[pp]->ch[Board::id(x,y)]->ch.size());
+        make_move(rt[pp]->cid,Board::id(x,y),__builtin_ctzll(kp),!rt[pp]->ch[Board::id(x,y)]->ch.size());
         rt[pp] = rt[pp]->moveTo(Board::id(x,y));
         print(rt[pp]->checked);
+    }
+}
+*/
+void Board::set_cell(int pp,Cell setTo){
+    (*this)[Board::pos(pp)] = setTo;
+    if(setTo!=Cell::Empty && !is_king(setTo)){
+        pair<int,int> t = Board::pos(pp);
+        int color = int(setTo) & 2;
+        if(color==0 && t.first == 9 || color==1 && t.first==0)
+            (*this)[Board::pos(pp)] = Cell(int(setTo) | 1);
     }
 }

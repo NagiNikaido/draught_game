@@ -27,6 +27,7 @@ struct TreeNode{
 class Board{
     Cell **bd;
     TreeNode **rt;
+    int current_cell;
 public:
     static const int N = 10;
     static const int M = 50;
@@ -38,10 +39,12 @@ public:
     ~Board();
     void print(ULL = 0);
     std::set<int> find_possible_move(int );
+    std::set<int> possible_moves(int );
     void select_cell(int );
-    void make_move(int ,int ,int ,bool);
+    std::pair<int,bool> make_move(int ,int );
     Cell *operator[](int _id){return bd[_id];}
     Cell &operator[](std::pair<int,int> _id){return bd[_id.first][_id.second];}
+    void set_cell(int ,Cell );
     static int id(int x,int y){
         return ((x^y)&1) ? x*5+(y>>1) : -1;
     }
