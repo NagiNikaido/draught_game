@@ -24,6 +24,32 @@
      </rect>
     </property>
    </widget>
+   <widget class="QPushButton" name="pushButton">
+    <property name="geometry">
+     <rect>
+      <x>640</x>
+      <y>60</y>
+      <width>71</width>
+      <height>71</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>认输</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pushButton_2">
+    <property name="geometry">
+     <rect>
+      <x>640</x>
+      <y>150</y>
+      <width>71</width>
+      <height>71</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>求和</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
@@ -62,6 +88,10 @@
    <extends>QWidget</extends>
    <header>draughtboard.h</header>
    <container>1</container>
+   <slots>
+    <signal>gameOver(int)</signal>
+    <signal>turnOver()</signal>
+   </slots>
   </customwidget>
  </customwidgets>
  <resources/>

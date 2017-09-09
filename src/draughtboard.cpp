@@ -6,18 +6,12 @@ DraughtBoard::DraughtBoard(QWidget *parent) : QWidget(parent),board()
     signalMapper = new QSignalMapper(this);
     gridLayout = new QGridLayout(this);
     gridLayout->setSpacing(0);
-    /*
-    pic[0] = new QPixmap(":/img/blackP.png");
-    pic[1] = new QPixmap(":/img/blackK.png");
-    pic[2] = new QPixmap(":/img/whiteP.png");
-    pic[3] = new QPixmap(":/img/whiteK.png");
-    pic[4] = new QPixmap(":/img/empty.png");
-    */
-    pic[0].addFile("D:\\workspace\\draught_game\\src\\img\\blackP.png",QSize(50,50));
-    pic[1].addFile("D:\\workspace\\draught_game\\src\\img\\blackK.png",QSize(50,50));
-    pic[2].addFile("D:\\workspace\\draught_game\\src\\img\\whiteP.png",QSize(50,50));
-    pic[3].addFile("D:\\workspace\\draught_game\\src\\img\\whiteK.png",QSize(50,50));
-    pic[4].addFile("D:\\workspace\\draught_game\\src\\img\\empty.png",QSize(50,50));
+
+    pic[0].addFile(":/img/blackP.png");
+    pic[1].addFile(":/img/blackK.png");
+    pic[2].addFile(":/img/whiteP.png");
+    pic[3].addFile(":/img/whiteK.png");
+    pic[4].addFile(":/img/empty.png");
 
     for(int i=0;i<Board::M;i++) board.set_cell(i,Cell::Empty);
     board.set_cell(6,Cell::Black_P);board.set_cell(8,Cell::White_P);board.set_cell(9,Cell::White_P);
