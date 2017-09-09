@@ -1,5 +1,6 @@
 #include "draughtboard.h"
 #include <QDebug>
+#include <algorithm>
 
 DraughtBoard::DraughtBoard(QWidget *parent) : QWidget(parent),board()
 {
@@ -12,7 +13,7 @@ DraughtBoard::DraughtBoard(QWidget *parent) : QWidget(parent),board()
     pic[2].addFile(":/img/whiteP.png");
     pic[3].addFile(":/img/whiteK.png");
     pic[4].addFile(":/img/empty.png");
-
+/*
     for(int i=0;i<Board::M;i++) board.set_cell(i,Cell::Empty);
     board.set_cell(6,Cell::Black_P);board.set_cell(8,Cell::White_P);board.set_cell(9,Cell::White_P);
     board.set_cell(14,Cell::Black_P);
@@ -22,7 +23,11 @@ DraughtBoard::DraughtBoard(QWidget *parent) : QWidget(parent),board()
     board.set_cell(32,Cell::Black_P);
     board.set_cell(36,Cell::Black_P);
     board.set_cell(42,Cell::White_P);
-    color = 0;
+*/
+    for(int i=0;i<20;i++) board.set_cell(i,Cell::Black_P);
+    for(int i=20;i<30;i++) board.set_cell(i,Cell::Empty);
+    for(int i=30;i<50;i++) board.set_cell(i,Cell::White_P);
+    my_color = 0;color = 0;
 
     qDebug() << pic[4];
     for(int i=0;i<Board::N;i++)
@@ -38,18 +43,19 @@ DraughtBoard::DraughtBoard(QWidget *parent) : QWidget(parent),board()
             gridLayout->addWidget(grid[i][j],i,j);
         }
    connect(signalMapper,SIGNAL(mapped(const QString &)),this,SLOT(onClick(const QString &)));
-   exchangeTurn();
+   //exchangeTurn();
 }
 
 void DraughtBoard :: exchangeTurn(){
     clearStyle(SELECTABLE|REACHABLE|REMOVED);
-    has_selected=false;current=-1;
+    has_selected=false;current=-1;checked_count = 0;
     for(int i=0;i<Board::N;i++)
         for(int j=0;j<Board::N;j++)
             if((i^j)&1){
                 grid[i][j]->setIcon(pic[int(board[i][j])]);
             }
     color ^= 1;
+    if(color != my_color) return;
     std::set<int> lst = board.find_possible_move(color);
     if(!lst.size()){
         emit gameOver(color^1);
@@ -87,8 +93,14 @@ void DraughtBoard :: redraw(int id){
     grid[pos.first][pos.second]->setIcon(pic[int(board[pos])]);
 }
 
+void DraughtBoard::setCell(int id, int newCell){
+    qDebug() << id << newCell;
+    board[Board::pos(id)] = Cell(newCell);
+    redraw(id);
+}
+
 void DraughtBoard :: onClick(const QString &res){
-    if(res == "-1") return;
+    if(res == "-1" || color != my_color) return;
     auto pos = Board::pos(res.toInt());
     qDebug() << pos << endl;
     if(state[pos.first][pos.second] & SELECTABLE){
@@ -120,7 +132,7 @@ void DraughtBoard::showPossibleMove(int id){
 void DraughtBoard::makeMove(int to){
     clearStyle(SELECTABLE|REACHABLE);
     auto info = board.make_move(current,to);
-    auto pos = Board::pos(info.first);
+    emit moveFT(current,to,info.first,info.second ? 1 : 0);
     if(info.second){
         exchangeTurn();
     }
@@ -133,6 +145,32 @@ void DraughtBoard::makeMove(int to){
         makeSelectable(pos.first,pos.second);
         showPossibleMove(-1);
         qDebug() << "here!" << pos << endl;
+    }
+}
+
+static const char * BGMlist[5] = {
+    ":/wav/Chatwheel_frog.wav",
+    ":/wav/Chatwheel_sad_bone.wav",
+    ":/wav/Chatwheel_wan_bu_liao_la.wav",
+    ":/wav/Chatwheel_disastah.wav",
+    ":/wav/Chatwheel_ay_ay_ay.wav"
+};
+
+void DraughtBoard::makeMove(int from,int to,int checked,int isFinal){
+    qDebug() << from << " " << to << " " << checked << " " << isFinal;
+    clearStyle(SELECTABLE|REACHABLE);
+    board.make_move(from,to,checked,isFinal);
+    if(checked>=0){
+        auto pos = Board::pos(checked);
+        ++checked_count;
+        makeRemoved(pos.first,pos.second);
+    }
+    QSound::play(BGMlist[std::min(checked_count,4)]);
+    redraw(from);redraw(to);
+    auto pos = Board::pos(to);
+    makeSelectable(pos.first,pos.second);
+    if(isFinal){
+        exchangeTurn();
     }
 }
 

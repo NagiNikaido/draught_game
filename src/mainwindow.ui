@@ -14,7 +14,7 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <widget class="DraughtBoard" name="widget" native="true">
+   <widget class="DraughtBoard" name="draught_board" native="true">
     <property name="geometry">
      <rect>
       <x>10</x>
@@ -66,6 +66,7 @@
     </property>
     <addaction name="action_2"/>
     <addaction name="action"/>
+    <addaction name="action_3"/>
    </widget>
    <addaction name="menu"/>
   </widget>
@@ -78,6 +79,11 @@
   <action name="action_2">
    <property name="text">
     <string>创建主机</string>
+   </property>
+  </action>
+  <action name="action_3">
+   <property name="text">
+    <string>加载盘面</string>
    </property>
   </action>
  </widget>

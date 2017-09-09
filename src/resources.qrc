@@ -5,5 +5,24 @@
         <file>img/empty.png</file>
         <file>img/whiteK.png</file>
         <file>img/whiteP.png</file>
+        <file>wav/Chatwheel_all_dead.wav</file>
+        <file>wav/Chatwheel_ay_ay_ay.wav</file>
+        <file>wav/Chatwheel_brutal.wav</file>
+        <file>wav/Chatwheel_charge.wav</file>
+        <file>wav/Chatwheel_crash_burn.wav</file>
+        <file>wav/Chatwheel_cricket.wav</file>
+        <file>wav/Chatwheel_crybaby.wav</file>
+        <file>wav/Chatwheel_disastah.wav</file>
+        <file>wav/Chatwheel_drum_roll.wav</file>
+        <file>wav/Chatwheel_ehto_g_g.wav</file>
+        <file>wav/Chatwheel_frog.wav</file>
+        <file>wav/Chatwheel_headshake.wav</file>
+        <file>wav/Chatwheel_rimshot.wav</file>
+        <file>wav/Chatwheel_wan_bu_liao_la.wav</file>
+        <file>wav/Chatwheel_wow.wav</file>
+        <file>wav/Chatwheel_zou_hao_bu_song.wav</file>
+        <file>wav/Crowd_lv_01.wav</file>
+        <file>wav/Crowd_lv_02.wav</file>
+        <file>wav/Chatwheel_sad_bone.wav</file>
     </qresource>
 </RCC>

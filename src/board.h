@@ -42,6 +42,7 @@ public:
     std::set<int> possible_moves(int );
     void select_cell(int );
     std::pair<int,bool> make_move(int ,int );
+    void make_move(int ,int ,int ,bool );
     Cell *operator[](int _id){return bd[_id];}
     Cell &operator[](std::pair<int,int> _id){return bd[_id.first][_id.second];}
     void set_cell(int ,Cell );

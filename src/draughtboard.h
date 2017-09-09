@@ -7,6 +7,7 @@
 #include <QGridLayout>
 #include <QSignalMapper>
 #include <QPushButton>
+#include <QSound>
 #include "board.h"
 
 class DraughtBoard : public QWidget
@@ -22,8 +23,8 @@ public:
     QIcon pic[5];
     Board board;
     int state[Board::N][Board::N];
-    int color;
-    int current;
+    int color,my_color;
+    int current,checked_count;
     bool has_selected;
     QSignalMapper *signalMapper;
     ~DraughtBoard();
@@ -34,10 +35,13 @@ public:
     void makeReachable(int ,int );
     void makeRemoved(int ,int );
     void makeMove(int );
+    void makeMove(int ,int ,int ,int );
     void redraw(int );
+    void setCell(int ,int );
 signals:
     void turnOver();
     void gameOver(int );
+    void moveFT(int ,int ,int ,int );
 public slots:
     void onClick(const QString &);
     //void makeMove(int );
